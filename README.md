@@ -1,5 +1,12 @@
 kafka-akka-extension
 ======
+
+Akka extension for Kafka consumer. Features include
+ * Automatically set up actors that poll message from Kafka
+ * All blocking IO is hidden from user's perspective
+ * Acknowledgement based back pressure implementation
+ * Minimal code/configuration
+
 #### Configuration
 
     kafka {

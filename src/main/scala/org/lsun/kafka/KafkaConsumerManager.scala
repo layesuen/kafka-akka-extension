@@ -5,13 +5,12 @@ import java.util.Properties
 import akka.actor.{Props, ActorRef, Actor}
 import com.typesafe.config.Config
 import kafka.consumer.{Consumer, ConsumerConnector, ConsumerConfig}
+import org.lsun.kafka.KafkaConsumer._
 
 /**
  * Consumer manager actor (used by the extension)
  */
 protected class KafkaConsumerManager(config: Config) extends Actor {
-
-  import KafkaConsumerManager._
 
   private val kafkaConsumerConfig = {
     val props = new Properties()
@@ -30,11 +29,12 @@ protected class KafkaConsumerManager(config: Config) extends Actor {
   private var streamReaderActors: Map[String, Seq[ActorRef]] = _
 
   private val idle: Receive = {
-    case Start(subscriptionMap) =>
+    case StartConsumer(consumerSettings) =>
+      val settings = consumerSettings.settings
       // create consumer connector
       kafkaConsumer = Consumer.create(kafkaConsumerConfig)
       // create streams
-      val topicCountMap = subscriptionMap.map { case (topic, x) => topic -> x._1 }
+      val topicCountMap = settings.map { case (topic, x) => topic -> x._1 }
       val kafkaConsumerStreams = kafkaConsumer.createMessageStreams(topicCountMap).toMap.map { case (topic, xs) => topic -> xs.toSeq }
       // create stream reader actors
       streamReaderActors = kafkaConsumerStreams.map {
@@ -54,7 +54,7 @@ protected class KafkaConsumerManager(config: Config) extends Actor {
       // add subscriber to stream readers and start stream readers
       streamReaderActors.foreach {
         case (topic, actors) =>
-          actors.foreach(actor => subscriptionMap(topic)._2.foreach(actor ! KafkaStreamReader.AddSubscriber(_)))
+          actors.foreach(actor => settings(topic)._2.foreach(actor ! KafkaStreamReader.AddSubscriber(_)))
           actors.foreach(_ ! KafkaStreamReader.Start)
       }
       // become started
@@ -62,7 +62,7 @@ protected class KafkaConsumerManager(config: Config) extends Actor {
   }
 
   private val started: Receive = {
-    case Shutdown =>
+    case StopConsumer =>
       // shutdown consumer
       kafkaConsumer.shutdown()
       // stop all actors
@@ -74,10 +74,3 @@ protected class KafkaConsumerManager(config: Config) extends Actor {
   def receive = idle
 }
 
-/**
- * Companion object of consumer manager actor
- */
-protected object KafkaConsumerManager {
-  case class Start(subscriptionMap: Map[String, (Int, Set[ActorRef])])
-  case object Shutdown
-}

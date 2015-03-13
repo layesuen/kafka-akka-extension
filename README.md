@@ -7,7 +7,22 @@ Akka extension for Kafka consumer. Features include
  * Acknowledgement based back pressure implementation
  * Minimal code/configuration
 
-#### Configuration
+## Producer
+
+### Configuration
+    kafka {
+      producer {
+        metadata-broker-list = "host1:port1,host2:port2,host3:port3",
+      }
+    }
+
+### Usage
+
+    IO(Kafka) ! Message("topic1", key, message)
+  
+## Consumer
+
+### Configuration
 
     kafka {
       consumer {
@@ -17,18 +32,15 @@ Akka extension for Kafka consumer. Features include
       }
     }
 
-    akka.extension += "mfp.platform.kafka.akka.KafkaConsumerExtension"
-
 _maximum-backlog_ is the maximum number of messages in backlog, set it to 0 to disable back pressure
 
-#### Bootstrapping
+### Usage
+    val settings = KafkaConsumer.ConsumerSettings
+        .withTopc("topic1")
+        .withConsumerActor("topic", actor1)
+    IO(KafkaConsumer) ! StartConsumer(settings)
 
-    KafkaConsumerExtension(system).start(Map(
-      "topic1" -> (numOfStreamsForTopic1, Set(receiverActor1Topic1)),
-      "topic2" -> (numOfStreamsForTopic2, Set(receiverActor1Topic2, receiverActor2Topic2))
-    ))
-
-#### Receiver Actor Responsibility
+### Receiver Actor Responsibility
 
 For the receiver actors, it receives
 
@@ -40,6 +52,4 @@ for incoming messages. It is responsible to reply
 
 no matter if the message is processed successful or not. Otherwise the consumer will be suspended when it reach the configured maximum messages in backlog.
 
-#### Shutdown (optional)
 
-    KafkaConsumerExtension(system).shutdown()

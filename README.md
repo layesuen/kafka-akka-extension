@@ -7,6 +7,10 @@ Akka extension for Kafka consumer. Features include
  * Acknowledgement based back pressure implementation
  * Minimal code/configuration
 
+## SBT dependencies
+    resolvers += "Sonatype OSS" at "https://oss.sonatype.org/content/groups/public"
+    libraryDependencies += "org.lsun" %% "kafka-akka-extension" % "0.0.1"
+
 ## Producer
 
 ### Configuration
